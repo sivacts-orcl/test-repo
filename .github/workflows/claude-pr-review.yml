@@ -1,10 +1,8 @@
 name: Claude Code Check-in Workflow
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   run-claude-skill:
@@ -24,7 +22,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
+          prompt: |
             A code check-in just occurred. Please execute the following task:
             1. Review the latest changes in the diff.
             2. Verify adhering to code style standards.
