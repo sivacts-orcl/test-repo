@@ -1,0 +1,31 @@
+name: Claude Code Check-in Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  run-claude-skill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Skill
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            A code check-in just occurred. Please execute the following task:
+            1. Review the latest changes in the diff.
+            2. Verify adhering to code style standards.
+            3. Highlight any security risks or bugs.
