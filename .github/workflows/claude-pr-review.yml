@@ -1,30 +1,37 @@
-name: Claude Code Check-in Workflow
+- name: Install LiteLLM
+        run: pip install litellm
 
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+      - name: Run LiteLLM Analysis
+        env:
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          LITELLM_BASE_URL: ${{ secrets.LITELLM_BASE_URL }}
+        run: |
+          python -c "
+          import os
+          from litellm import completion
 
-jobs:
-  run-claude-skill:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
-      id-token: write # Fixes the OIDC token error
+          diff_content = os.environ.get('DIFF', '')
+          if not diff_content.strip():
+              print('No code changes detected in diff.')
+              exit(0)
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+          prompt = f'''A code check-in just occurred. Please review the following git diff:
 
-      - name: Run Claude Skill
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            A code check-in just occurred. Please execute the following task:
-            1. Review the latest changes in the diff.
-            2. Verify adhering to code style standards.
-            3. Highlight any security risks or bugs.
+          {diff_content}
+
+          Task:
+          1. Review the latest changes in the diff.
+          2. Verify adhering to code style standards.
+          3. Highlight any security risks or bugs.
+          '''
+
+          response = completion(
+              model='claude-3-7-sonnet-20250219', # Or your LiteLLM model alias (e.g., 'anthropic/claude-3-7-sonnet')
+              api_key=os.environ['LITELLM_API_KEY'],
+              api_base=os.environ['LITELLM_BASE_URL'],
+              messages=[{'role': 'user', 'content': prompt}]
+          )
+
+          print('=== LITELLM CHECK-IN REVIEW ===')
+          print(response.choices[0].message.content)
+          "
